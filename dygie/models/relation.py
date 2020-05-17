@@ -182,7 +182,7 @@ class RelationExtractor(Model):
         # for setting threshold
         _, predicted_relations = relation_scores.max(-1)
         # if (predicted_relations.sum()).cpu().numpy() != 0:
-        #     import pdb; pdb.set_trace()        
+        #     import pdb; pdb.set_trace()
         predicted_relations -= 1
 
 
@@ -218,12 +218,12 @@ class RelationExtractor(Model):
         res_dict = []
         res_list = []
         res_scores = []
-        
+
 
         # Collect predictions for each sentence in minibatch.
         zipped = zip(top_spans_batch, predicted_relations_batch, num_spans_to_keep_batch, relation_scores)
         for top_spans, predicted_relations, num_spans_to_keep, relation_score in zipped:
-            
+
             entry_dict, entry_list = self._decode_sentence(
                 top_spans, predicted_relations, num_spans_to_keep, relation_score)
 
@@ -256,18 +256,17 @@ class RelationExtractor(Model):
         # Iterate over all span pairs and labels. Record the span if the label isn't null.
         res_dict = {}
         res_list = []
-        res_score_list = []
         for i, j in itertools.product(range(keep), range(keep)):
             span_1 = top_spans[i]
             span_2 = top_spans[j]
             label = predicted_relations[i, j].item()
             if label >= 0:
                 score = softmax(relation_score[i][j].cpu().detach().numpy())[label+1]
+                raw_score = relation_score[i][j][label+1]
                 label_name = self.vocab.get_token_from_index(label, namespace="relation_labels")
                 res_dict[(span_1, span_2, score)] = label_name
-                list_entry = (span_1[0], span_1[1], span_2[0], span_2[1], label_name, score)
+                list_entry = (span_1[0], span_1[1], span_2[0], span_2[1], label_name, score, raw_score)
                 res_list.append(list_entry)
-                res_score_list.append(score)
 
         return res_dict, res_list
 
